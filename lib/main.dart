@@ -8,28 +8,14 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
+
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Praktikumsbericht',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.amber),
         useMaterial3: true,
       ),
       home: const HomePage(title: 'Praktikumsbericht'),
@@ -41,12 +27,14 @@ class HomePage extends StatelessWidget {
   final String title;
   const HomePage({super.key, required this.title});
 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(title),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        elevation: 5,
         actions: [
           IconButton(onPressed: () {
             Navigator.of(context).push(MaterialPageRoute(
@@ -61,6 +49,7 @@ class HomePage extends StatelessWidget {
   }
 }
 
+
 class Editor extends StatefulWidget {
 
    const Editor({super.key});
@@ -74,6 +63,11 @@ class _EditorState extends State<Editor> {
   final TextEditingController startTimeController = TextEditingController();
   final TextEditingController endTimeController = TextEditingController();
   final TextEditingController activityController = TextEditingController();
+
+  addItem() {
+
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -91,6 +85,8 @@ class _EditorState extends State<Editor> {
         ],
       ),
 
+
+
       body: SingleChildScrollView(
         child: Center(
           child: Column(
@@ -103,7 +99,6 @@ class _EditorState extends State<Editor> {
                     setState(() {
                       dateController.text = value.formateDateTime('dd.MM.yyyy').toString();
                     });
-                    print(value.toIso8601String());
                   });
                 },
                 child: TextField(
@@ -136,9 +131,9 @@ class _EditorState extends State<Editor> {
                 controller: startTimeController,
                 textAlign: TextAlign.center,
                 keyboardType: TextInputType.number,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   filled: true,
-                  labelText: 'Startzeit',
+                  labelText: 'Startziet',
                 ),
               ),
             ),
@@ -158,7 +153,7 @@ class _EditorState extends State<Editor> {
                 controller: endTimeController,
                 textAlign: TextAlign.center,
                 keyboardType: TextInputType.number,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   filled: true,
                   labelText: 'Endzeit',
                 ),
@@ -169,18 +164,21 @@ class _EditorState extends State<Editor> {
                   controller: activityController,
                   textAlign: TextAlign.center,
                   keyboardType: TextInputType.text,
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     filled: true,
                     helperMaxLines: 20,
                     labelText: 'Tätigkeiten'
                   ),
                 ),
-              MaterialButton(
-                  onPressed: () {},
-                  color: Colors.green,
-                  shape: CircleBorder(),
-                  padding: EdgeInsets.all(15.0),
-                  child: Icon(Icons.adb, size: 35,),
+              Padding(
+                padding: const EdgeInsets.all(150),
+                child: MaterialButton(
+                    onPressed: () {},
+                    color: Colors.green,
+                    shape: const CircleBorder(),
+                    padding: const EdgeInsets.all(15.0),
+                    child: const Icon(Icons.adb, size: 35,),
+                ),
               )
             ],
           ),
