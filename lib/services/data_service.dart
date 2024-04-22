@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:praktikumsbericht/extensions/daydata.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -36,6 +37,19 @@ class DataService {
       List <Map<String, dynamic>> dayDataList = List<Map<String, dynamic>>.from(jsonDecode(data));
       return dayDataList.map((e) => DayData.fromJson(e)).toList();
     }
+  }
+  
+  Future<bool> deletaData(DayData dayData) async {
+    List<DayData> data = await getData();
+    data = data.where((element){
+      if(element != dayData) {
+        return true;
+      }
+      else{
+        return false;
+      }
+    }).toList();
+    return await sharedPreferences.setString(_storageKey, jsonEncode(data)); 
   }
 
 }

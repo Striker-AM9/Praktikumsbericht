@@ -86,12 +86,25 @@ class _HomePageState extends State<HomePage> {
               padding: const EdgeInsets.all(5),
               itemBuilder: (context, index) {
                 DayData data = snapShot.data![index];
-                return ListTile(title: Text(data.tasks), subtitle: Text(data.date), trailing: const Icon(Icons.arrow_forward_ios), onTap: () {
-                  Navigator.of(context)
-                      .push(MaterialPageRoute(
-                      builder: (context) => Editor(sharedPreferences: widget.sharedPreferences))
-                  );
-                },);
+                return Dismissible(
+                  key: Key(data.date),
+                  direction: DismissDirection.endToStart,
+                  background: const ColoredBox(color: Colors.red,
+                  child: Align(
+                    child: Icon(Icons.delete_forever, color: Colors.white,),
+                  )
+                    ),
+                  confirmDismiss: (_) async {
+                    return await _dataservice.deletaData(data);
+                  },
+                  onDismissed: (_) => setState(() {}),
+                  child: ListTile(title: Text(data.tasks), subtitle: Text(data.date), trailing: const Icon(Icons.arrow_forward_ios), onTap: () {
+                    Navigator.of(context)
+                        .push(MaterialPageRoute(
+                        builder: (context) => Editor(sharedPreferences: widget.sharedPreferences, dayData: data,))
+                    );
+                  },),
+                );
               },
               itemCount: snapShot.data!.length,
               separatorBuilder: (context, index) {
@@ -105,8 +118,9 @@ class _HomePageState extends State<HomePage> {
 }
 
 class Editor extends StatefulWidget {
+  final DayData? dayData;
   final SharedPreferences sharedPreferences;
-  const Editor({super.key, required this.sharedPreferences});
+  const Editor({super.key, required this.sharedPreferences, this.dayData});
 
   @override
   State<Editor> createState() => _EditorState();
@@ -125,6 +139,12 @@ class _EditorState extends State<Editor> {
   void initState() {
     super.initState();
     _dataservice = DataService(widget.sharedPreferences);
+    if (widget.dayData != null) {
+      dateController.text = widget.dayData?.date ?? '';
+      startTimeController.text = widget.dayData?.startTime ?? '';
+      endTimeController.text = widget.dayData?.endTime ?? '';
+      activityController.text = widget.dayData?.tasks ?? '';
+    }
   }
 
   @override
@@ -140,7 +160,7 @@ class _EditorState extends State<Editor> {
             icon: const Icon(Icons.close)),
         actions: [
           IconButton(
-              onPressed: () {
+              onPressed: isValid() ? () {
                 DayData daydata = DayData(
                     date: dateController.text,
                     startTime: startTimeController.text,
@@ -148,7 +168,7 @@ class _EditorState extends State<Editor> {
                     tasks: activityController.text);
                 _dataservice.storeData(daydata);
                 Navigator.of(context).pop(true);
-              },
+              } : null,
               icon: const Icon(Icons.done)),
         ],
       ),
@@ -239,6 +259,13 @@ class _EditorState extends State<Editor> {
                 keyboardType: TextInputType.text,
                 decoration: const InputDecoration(
                     filled: true, helperMaxLines: 20, labelText: 'Tätigkeiten'),
+                onSubmitted: (value){
+                  if (value.isNotEmpty) {
+                    setState(() {
+
+                    });
+                  }
+                },
               ),
               Padding(
                 padding: const EdgeInsets.all(150),
@@ -259,4 +286,9 @@ class _EditorState extends State<Editor> {
       ),
     );
   }
+
+  bool isValid(){
+    return dateController.text.isNotEmpty && startTimeController.text.isNotEmpty && endTimeController.text.isNotEmpty && activityController.text.isNotEmpty;
+  }
+
 }
