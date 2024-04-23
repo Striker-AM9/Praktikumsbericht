@@ -23,9 +23,22 @@ class DataService {
       List<Map<String, dynamic>> dayDataList = List<Map<String, dynamic>>.from(jsonDecode(data));
       dayDataList.add(dayDataMap);
       dayDataList.sort((a, b) => a['date'].compareTo(b['date']));
-      encodedDayDataList = jsonEncode([dayDataMap]);
+      encodedDayDataList = jsonEncode(dayDataList);
     }
     return await sharedPreferences.setString(_storageKey, encodedDayDataList);
+  }
+
+  Future <bool> updateData(DayData dayData) async {
+    List<DayData> data = await getData();
+    data = data.map((e){
+      if(e == dayData){
+        return dayData;
+      }
+      else {
+        return e;
+      }
+    }).toList();
+    return await sharedPreferences.setString(_storageKey, jsonEncode(data));
   }
 
   Future<List<DayData>> getData() async {
@@ -34,7 +47,7 @@ class DataService {
       return [];
     }
     else {
-      List <Map<String, dynamic>> dayDataList = List<Map<String, dynamic>>.from(jsonDecode(data));
+      List<Map<String, dynamic>> dayDataList = List<Map<String, dynamic>>.from(jsonDecode(data));
       return dayDataList.map((e) => DayData.fromJson(e)).toList();
     }
   }

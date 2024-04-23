@@ -102,7 +102,11 @@ class _HomePageState extends State<HomePage> {
                     Navigator.of(context)
                         .push(MaterialPageRoute(
                         builder: (context) => Editor(sharedPreferences: widget.sharedPreferences, dayData: data,))
-                    );
+                    ).then((value) {
+                      if (value == true) {
+                        setState(() {});
+                      }
+                    });
                   },),
                 );
               },
@@ -160,13 +164,18 @@ class _EditorState extends State<Editor> {
             icon: const Icon(Icons.close)),
         actions: [
           IconButton(
-              onPressed: isValid() ? () {
+              onPressed: isValid() ? () async {
                 DayData daydata = DayData(
                     date: dateController.text,
                     startTime: startTimeController.text,
                     endTime: endTimeController.text,
                     tasks: activityController.text);
-                _dataservice.storeData(daydata);
+                if (widget.dayData != null) {
+                  await _dataservice.updateData(daydata);
+                }
+                else{
+                  await _dataservice.storeData(daydata);
+                }
                 Navigator.of(context).pop(true);
               } : null,
               icon: const Icon(Icons.done)),
@@ -178,6 +187,7 @@ class _EditorState extends State<Editor> {
             children: [
               GestureDetector(
                 onTap: () {
+                  if (widget.dayData != null) return;
                   showDatePicker(
                           context: context,
                           initialDate: DateTime.now(),
@@ -270,7 +280,13 @@ class _EditorState extends State<Editor> {
               Padding(
                 padding: const EdgeInsets.all(150),
                 child: MaterialButton(
-                  onPressed: () {},
+                  onPressed: () {Navigator.of(context).push(MaterialPageRoute(
+                      builder: (context) => const Chat())
+                  ).then((value) {
+                    if (value == true) {
+                      setState(() {});
+                    }
+                  });},
                   color: Colors.green,
                   shape: const CircleBorder(),
                   padding: const EdgeInsets.all(15.0),
@@ -292,3 +308,28 @@ class _EditorState extends State<Editor> {
   }
 
 }
+
+class Chat extends StatefulWidget {
+  const Chat({super.key});
+
+  @override
+  State<Chat> createState() => _ChatState();
+}
+
+class _ChatState extends State<Chat> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.amber,
+        title: Text('AI Chat'),
+      ),
+      body: Center(
+        child: Text(
+          'textss'
+        ),
+      ),
+    );
+  }
+}
+
