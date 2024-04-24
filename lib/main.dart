@@ -146,6 +146,22 @@ class _HomePageState extends State<HomePage> {
               },
             );
           }),
+      floatingActionButton: FloatingActionButton(
+        child: const Icon(Icons.picture_as_pdf),
+        onPressed: () {
+    Navigator.of(context)
+        .push(MaterialPageRoute(
+    fullscreenDialog: true,
+    builder: (context) => const PDFPreview(
+    ),
+    ))
+        .then((value) {
+    if (value == true) {
+    setState(() {});
+    }
+    });
+    },
+      ),
     );
   }
 }
@@ -440,3 +456,30 @@ class _ChatState extends State<Chat> {
     }
   }
 }
+
+class PDFPreview extends StatelessWidget {
+  const PDFPreview({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('PDF'),
+        backgroundColor: Colors.amber,
+        leading: IconButton(
+            onPressed: () {
+
+            },
+            icon: const Icon(Icons.close)),
+
+        actions: [IconButton(
+            onPressed: () {
+
+            },
+            icon: const Icon(Icons.file_download)
+        ),]
+      )
+    );
+  }
+}
+
