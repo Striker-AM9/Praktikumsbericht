@@ -1,6 +1,7 @@
 import 'package:dash_chat_2/dash_chat_2.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_gemini/flutter_gemini.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -377,6 +378,18 @@ class _ChatState extends State<Chat> {
   Widget _buildUI() {
     return DashChat(
       inputOptions: const InputOptions(trailing: []),
+      messageOptions: MessageOptions(
+        onPressMessage: (message) async {
+          await Clipboard.setData(ClipboardData(text: message.text)).then((_) {
+            ScaffoldMessenger.of(context)
+                .showSnackBar(const SnackBar(content: Text("Message kopiert")));
+          });
+
+          if (kDebugMode) {
+            print(message.text);
+          }
+        },
+      ),
       currentUser: currentUser,
       onSend: _sendMessage,
       messages: messages,
