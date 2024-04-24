@@ -1,13 +1,13 @@
-import 'dart:typed_data';
-
 import 'package:dash_chat_2/dash_chat_2.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gemini/flutter_gemini.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import 'package:praktikumsbericht/extensions/datetime_extension.dart';
 import 'package:praktikumsbericht/extensions/daydata.dart';
 import 'package:praktikumsbericht/extensions/time_of_day_extension.dart';
 import 'package:praktikumsbericht/services/data_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,7 +32,10 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.amber),
         useMaterial3: true,
       ),
-      home: HomePage(title: 'Praktikumsbericht', sharedPreferences: sharedPreferences,),
+      home: HomePage(
+        title: 'Praktikumsbericht',
+        sharedPreferences: sharedPreferences,
+      ),
     );
   }
 }
@@ -40,7 +43,8 @@ class MyApp extends StatelessWidget {
 class HomePage extends StatefulWidget {
   final String title;
   final SharedPreferences sharedPreferences;
-  const HomePage({super.key, required this.title, required this.sharedPreferences});
+  const HomePage(
+      {super.key, required this.title, required this.sharedPreferences});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -68,7 +72,9 @@ class _HomePageState extends State<HomePage> {
                 Navigator.of(context)
                     .push(MaterialPageRoute(
                   fullscreenDialog: true,
-                  builder: (context) => Editor(sharedPreferences: widget.sharedPreferences,),
+                  builder: (context) => Editor(
+                    sharedPreferences: widget.sharedPreferences,
+                  ),
                 ))
                     .then((value) {
                   if (value == true) {
@@ -79,15 +85,17 @@ class _HomePageState extends State<HomePage> {
               icon: const Icon(Icons.add)),
         ],
       ),
-
-        body:
-        FutureBuilder(
+      body: FutureBuilder(
           future: _dataservice.getData(),
           builder: (context, snapShot) {
             if (snapShot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator(),);
+              return const Center(
+                child: CircularProgressIndicator(),
+              );
             } else if (snapShot.hasData && snapShot.data!.isEmpty) {
-              return const Center(child: Text('Keine Daten'),);
+              return const Center(
+                child: Text('Keine Daten'),
+              );
             }
             return ListView.separated(
               padding: const EdgeInsets.all(5),
@@ -96,34 +104,47 @@ class _HomePageState extends State<HomePage> {
                 return Dismissible(
                   key: Key(data.date),
                   direction: DismissDirection.endToStart,
-                  background: const ColoredBox(color: Colors.red,
-                  child: Align(
-                    child: Icon(Icons.delete_forever, color: Colors.white,),
-                  )
-                    ),
+                  background: const ColoredBox(
+                      color: Colors.red,
+                      child: Align(
+                        child: Icon(
+                          Icons.delete_forever,
+                          color: Colors.white,
+                        ),
+                      )),
                   confirmDismiss: (_) async {
                     return await _dataservice.deletaData(data);
                   },
                   onDismissed: (_) => setState(() {}),
-                  child: ListTile(title: Text(data.tasks), subtitle: Text(data.date), trailing: const Icon(Icons.arrow_forward_ios), onTap: () {
-                    Navigator.of(context)
-                        .push(MaterialPageRoute(
-                        builder: (context) => Editor(sharedPreferences: widget.sharedPreferences, dayData: data,))
-                    ).then((value) {
-                      if (value == true) {
-                        setState(() {});
-                      }
-                    });
-                  },),
+                  child: ListTile(
+                    title: Text(data.tasks),
+                    subtitle: Text(data.date),
+                    trailing: const Icon(Icons.arrow_forward_ios),
+                    onTap: () {
+                      Navigator.of(context)
+                          .push(MaterialPageRoute(
+                              builder: (context) => Editor(
+                                    sharedPreferences: widget.sharedPreferences,
+                                    dayData: data,
+                                  )))
+                          .then((value) {
+                        if (value == true) {
+                          setState(() {});
+                        }
+                      });
+                    },
+                  ),
                 );
               },
               itemCount: snapShot.data!.length,
               separatorBuilder: (context, index) {
-                return const Divider(height: 1, indent: 15,);
+                return const Divider(
+                  height: 1,
+                  indent: 15,
+                );
               },
             );
-          }
-        ),
+          }),
     );
   }
 }
@@ -171,20 +192,24 @@ class _EditorState extends State<Editor> {
             icon: const Icon(Icons.close)),
         actions: [
           IconButton(
-              onPressed: isValid() ? () async {
-                DayData daydata = DayData(
-                    date: dateController.text,
-                    startTime: startTimeController.text,
-                    endTime: endTimeController.text,
-                    tasks: activityController.text);
-                if (widget.dayData != null) {
-                  await _dataservice.updateData(daydata);
-                }
-                else{
-                  await _dataservice.storeData(daydata);
-                }
-                Navigator.of(context).pop(true);
-              } : null,
+              onPressed: isValid()
+                  ? () async {
+                      DayData daydata = DayData(
+                          date: dateController.text,
+                          startTime: startTimeController.text,
+                          endTime: endTimeController.text,
+                          tasks: activityController.text);
+                      if (widget.dayData != null) {
+                        _dataservice
+                            .updateData(daydata)
+                            .then((value) => Navigator.of(context).pop(true));
+                      } else {
+                        _dataservice
+                            .storeData(daydata)
+                            .then((value) => Navigator.of(context).pop(true));
+                      }
+                    }
+                  : null,
               icon: const Icon(Icons.done)),
         ],
       ),
@@ -276,24 +301,25 @@ class _EditorState extends State<Editor> {
                 keyboardType: TextInputType.text,
                 decoration: const InputDecoration(
                     filled: true, helperMaxLines: 20, labelText: 'Tätigkeiten'),
-                onSubmitted: (value){
+                onSubmitted: (value) {
                   if (value.isNotEmpty) {
-                    setState(() {
-
-                    });
+                    setState(() {});
                   }
                 },
               ),
               Padding(
                 padding: const EdgeInsets.all(150),
                 child: MaterialButton(
-                  onPressed: () {Navigator.of(context).push(MaterialPageRoute(
-                      builder: (context) => const Chat())
-                  ).then((value) {
-                    if (value == true) {
-                      setState(() {});
-                    }
-                  });},
+                  onPressed: () {
+                    Navigator.of(context)
+                        .push(MaterialPageRoute(
+                            builder: (context) => const Chat()))
+                        .then((value) {
+                      if (value == true) {
+                        setState(() {});
+                      }
+                    });
+                  },
                   color: Colors.green,
                   shape: const CircleBorder(),
                   padding: const EdgeInsets.all(15.0),
@@ -310,10 +336,12 @@ class _EditorState extends State<Editor> {
     );
   }
 
-  bool isValid(){
-    return dateController.text.isNotEmpty && startTimeController.text.isNotEmpty && endTimeController.text.isNotEmpty && activityController.text.isNotEmpty;
+  bool isValid() {
+    return dateController.text.isNotEmpty &&
+        startTimeController.text.isNotEmpty &&
+        endTimeController.text.isNotEmpty &&
+        activityController.text.isNotEmpty;
   }
-
 }
 
 class Chat extends StatefulWidget {
@@ -333,24 +361,22 @@ class _ChatState extends State<Chat> {
     id: "1",
     firstName: "Gemini",
     profileImage:
-    "https://seeklogo.com/images/G/google-gemini-logo-A5787B2669-seeklogo.com.png",
+        "https://seeklogo.com/images/G/google-gemini-logo-A5787B2669-seeklogo.com.png",
   );
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.amber,
-        title: Text('AI Chat'),
-      ),
-
-      body: _buildUI()
-    );
+        appBar: AppBar(
+          backgroundColor: Colors.amber,
+          title: const Text('AI Chat'),
+        ),
+        body: _buildUI());
   }
+
   Widget _buildUI() {
     return DashChat(
-      inputOptions: const InputOptions(trailing: [
-      ]),
+      inputOptions: const InputOptions(trailing: []),
       currentUser: currentUser,
       onSend: _sendMessage,
       messages: messages,
@@ -372,17 +398,17 @@ class _ChatState extends State<Chat> {
         if (lastMessage != null && lastMessage.user == geminiUser) {
           lastMessage = messages.removeAt(0);
           String response = event.content?.parts?.fold(
-              "", (previous, current) => "$previous ${current.text}") ??
+                  "", (previous, current) => "$previous ${current.text}") ??
               "";
           lastMessage.text += response;
           setState(
-                () {
+            () {
               messages = [lastMessage!, ...messages];
             },
           );
         } else {
           String response = event.content?.parts?.fold(
-              "", (previous, current) => "$previous ${current.text}") ??
+                  "", (previous, current) => "$previous ${current.text}") ??
               "";
           ChatMessage message = ChatMessage(
             user: geminiUser,
@@ -395,10 +421,9 @@ class _ChatState extends State<Chat> {
         }
       });
     } catch (e) {
-      print(e);
+      if (kDebugMode) {
+        print(e);
+      }
     }
   }
-
 }
-
-
