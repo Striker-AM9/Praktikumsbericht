@@ -1,4 +1,8 @@
+import 'dart:typed_data';
+
+import 'package:dash_chat_2/dash_chat_2.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gemini/flutter_gemini.dart';
 import 'package:praktikumsbericht/extensions/datetime_extension.dart';
 import 'package:praktikumsbericht/extensions/daydata.dart';
 import 'package:praktikumsbericht/extensions/time_of_day_extension.dart';
@@ -8,6 +12,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+  Gemini.init(
+    apiKey: 'AIzaSyBWgubQS-g4cUFXmOZUEl3Q33hSgGk-XFQ',
+  );
   runApp(MyApp(sharedPreferences: sharedPreferences));
 }
 //////
@@ -317,6 +324,18 @@ class Chat extends StatefulWidget {
 }
 
 class _ChatState extends State<Chat> {
+  final Gemini gemini = Gemini.instance;
+
+  List<ChatMessage> messages = [];
+
+  ChatUser currentUser = ChatUser(id: "0", firstName: "User");
+  ChatUser geminiUser = ChatUser(
+    id: "1",
+    firstName: "Gemini",
+    profileImage:
+    "https://seeklogo.com/images/G/google-gemini-logo-A5787B2669-seeklogo.com.png",
+  );
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -324,12 +343,62 @@ class _ChatState extends State<Chat> {
         backgroundColor: Colors.amber,
         title: Text('AI Chat'),
       ),
-      body: Center(
-        child: Text(
-          'textss'
-        ),
-      ),
+
+      body: _buildUI()
     );
   }
+  Widget _buildUI() {
+    return DashChat(
+      inputOptions: const InputOptions(trailing: [
+      ]),
+      currentUser: currentUser,
+      onSend: _sendMessage,
+      messages: messages,
+    );
+  }
+
+  void _sendMessage(ChatMessage chatMessage) {
+    setState(() {
+      messages = [chatMessage, ...messages];
+    });
+    try {
+      String question = chatMessage.text;
+      gemini
+          .streamGenerateContent(
+        question,
+      )
+          .listen((event) {
+        ChatMessage? lastMessage = messages.firstOrNull;
+        if (lastMessage != null && lastMessage.user == geminiUser) {
+          lastMessage = messages.removeAt(0);
+          String response = event.content?.parts?.fold(
+              "", (previous, current) => "$previous ${current.text}") ??
+              "";
+          lastMessage.text += response;
+          setState(
+                () {
+              messages = [lastMessage!, ...messages];
+            },
+          );
+        } else {
+          String response = event.content?.parts?.fold(
+              "", (previous, current) => "$previous ${current.text}") ??
+              "";
+          ChatMessage message = ChatMessage(
+            user: geminiUser,
+            createdAt: DateTime.now(),
+            text: response,
+          );
+          setState(() {
+            messages = [message, ...messages];
+          });
+        }
+      });
+    } catch (e) {
+      print(e);
+    }
+  }
+
 }
+
 
