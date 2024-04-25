@@ -43,6 +43,8 @@ dependencies:
   flutter_gemini: ^2.0.3
   json_annotation: ^4.8.1
   dash_chat_2: ^0.0.20
+  pdf: ^3.10.8
+  printing: ^5.12.0
 
 
 

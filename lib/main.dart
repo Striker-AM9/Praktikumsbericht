@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_gemini/flutter_gemini.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pdf_widgets;
+import 'package:printing/printing.dart';
 
 import 'package:praktikumsbericht/extensions/datetime_extension.dart';
 import 'package:praktikumsbericht/extensions/daydata.dart';
@@ -149,18 +152,19 @@ class _HomePageState extends State<HomePage> {
       floatingActionButton: FloatingActionButton(
         child: const Icon(Icons.picture_as_pdf),
         onPressed: () {
-    Navigator.of(context)
-        .push(MaterialPageRoute(
-    fullscreenDialog: true,
-    builder: (context) => const PDFPreview(
-    ),
-    ))
-        .then((value) {
-    if (value == true) {
-    setState(() {});
-    }
-    });
-    },
+          Navigator.of(context)
+              .push(MaterialPageRoute(
+            fullscreenDialog: true,
+            builder: (context) => PDFPreview(
+              dataService: _dataservice,
+            ),
+          ))
+              .then((value) {
+            if (value == true) {
+              setState(() {});
+            }
+          });
+        },
       ),
     );
   }
@@ -458,28 +462,75 @@ class _ChatState extends State<Chat> {
 }
 
 class PDFPreview extends StatelessWidget {
-  const PDFPreview({super.key});
+  final DataService dataService;
+  const PDFPreview({super.key, required this.dataService});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('PDF'),
-        backgroundColor: Colors.amber,
-        leading: IconButton(
-            onPressed: () {
-
-            },
-            icon: const Icon(Icons.close)),
-
-        actions: [IconButton(
-            onPressed: () {
-
-            },
-            icon: const Icon(Icons.file_download)
-        ),]
-      )
+          title: const Text('Protokollvorschau'),
+          backgroundColor: Colors.amber,
+          leading: IconButton(onPressed: () {}, icon: const Icon(Icons.close)),
+          actions: [
+            IconButton(onPressed: () {}, icon: const Icon(Icons.file_download)),
+          ]),
+      body: PdfPreview(build: (context) async {
+        List<DayData> data = await dataService.getData();
+        return await createPreview(data);
+      }),
     );
   }
-}
 
+  Future<Uint8List> createPreview(List<DayData> data) async {
+    final pdf = pdf_widgets.Document();
+    pdf.addPage(pdf_widgets.Page(build: (context) {
+      return pdf_widgets.Column(
+        children: [
+          pdf_widgets.Row(
+            children: [
+              pdf_widgets.Expanded(
+                child: pdf_widgets.Text('Tätigkeit im Praktikum',
+                    textAlign: pdf_widgets.TextAlign.center),
+              ),
+            ],
+          ),
+          pdf_widgets.SizedBox(height: 20.0),
+          pdf_widgets.Row(
+            children: [
+              pdf_widgets.Text('Beschreibe einen Tag der Woche ausführlich.')
+            ],
+          ),
+          pdf_widgets.SizedBox(height: 20.0),
+          pdf_widgets.Table(
+              border: pdf_widgets.TableBorder.all(color: PdfColors.black),
+              children: [
+                pdf_widgets.TableRow(children: [
+                  pdf_widgets.SizedBox(
+                    width: 35.0,
+                    child: pdf_widgets.Column(
+                        children: [pdf_widgets.Text('Datum/\nArbeitszeit')]),
+                  ),
+                  pdf_widgets.Column(
+                      mainAxisAlignment: pdf_widgets.MainAxisAlignment.center,
+                      children: [pdf_widgets.Text('Ausgeführte Arbeiten')]),
+                ]),
+                pdf_widgets.TableRow(children: [
+                  pdf_widgets.SizedBox(
+                    width: 35.0,
+                    child: pdf_widgets.Column(children: [
+                      pdf_widgets.Text('\n\n\nvon\n\n\n\nbis\n\n\n\n',
+                          textAlign: pdf_widgets.TextAlign.left)
+                    ]),
+                  ),
+                  pdf_widgets.Column(
+                      mainAxisAlignment: pdf_widgets.MainAxisAlignment.center,
+                      children: [pdf_widgets.Text('')]),
+                ]),
+              ])
+        ],
+      );
+    }));
+    return pdf.save();
+  }
+}
