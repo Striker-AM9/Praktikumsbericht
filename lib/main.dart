@@ -86,7 +86,14 @@ class _HomePageState extends State<HomePage> {
                   }
                 });
               },
-              icon: const Icon(Icons.add)),
+              icon: const Padding(
+                padding: EdgeInsets.only(right: 4.0),
+                child: Icon(
+                  Icons.add_rounded,
+                  size: 32.0,
+                  color: Colors.black,
+                ),
+              )),
         ],
       ),
       body: FutureBuilder(
@@ -102,7 +109,6 @@ class _HomePageState extends State<HomePage> {
               );
             }
             return ListView.separated(
-              padding: const EdgeInsets.all(5),
               itemBuilder: (context, index) {
                 DayData data = snapShot.data![index];
                 return Dismissible(
@@ -121,9 +127,28 @@ class _HomePageState extends State<HomePage> {
                   },
                   onDismissed: (_) => setState(() {}),
                   child: ListTile(
-                    title: Text(data.tasks),
-                    subtitle: Text(data.date),
-                    trailing: const Icon(Icons.arrow_forward_ios),
+                    dense: true,
+                    visualDensity: const VisualDensity(
+                        horizontal: VisualDensity.minimumDensity,
+                        vertical: VisualDensity.minimumDensity),
+                    title: Text(
+                      data.tasks,
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    subtitle: Text(data.date,
+                        style: Theme.of(context).textTheme.labelSmall),
+                    trailing: Container(
+                      padding: const EdgeInsets.only(left: 8.0),
+                      height: 22.0,
+                      width: 22.0,
+                      alignment: Alignment.centerRight,
+                      child: const Icon(
+                        Icons.arrow_forward_ios,
+                        size: 22.0,
+                      ),
+                    ),
                     onTap: () {
                       Navigator.of(context)
                           .push(MaterialPageRoute(
@@ -149,21 +174,35 @@ class _HomePageState extends State<HomePage> {
               },
             );
           }),
-      floatingActionButton: FloatingActionButton(
-        child: const Icon(Icons.picture_as_pdf),
-        onPressed: () {
-          Navigator.of(context)
-              .push(MaterialPageRoute(
-            fullscreenDialog: true,
-            builder: (context) => PDFPreview(
-              dataService: _dataservice,
-            ),
-          ))
-              .then((value) {
-            if (value == true) {
-              setState(() {});
-            }
-          });
+      floatingActionButton: FutureBuilder(
+        future: _dataservice.getData(),
+        initialData: const [],
+        builder: (context, snapshot) {
+          if (snapshot.data?.isNotEmpty ?? false) {
+            return FloatingActionButton(
+              backgroundColor: Colors.amber,
+              onPressed: () {
+                Navigator.of(context)
+                    .push(MaterialPageRoute(
+                  fullscreenDialog: true,
+                  builder: (context) => PDFPreview(
+                    dataService: _dataservice,
+                  ),
+                ))
+                    .then((value) {
+                  if (value == true) {
+                    setState(() {});
+                  }
+                });
+              },
+              child: const Icon(
+                Icons.picture_as_pdf,
+                size: 32,
+              ),
+            );
+          } else {
+            return const SizedBox();
+          }
         },
       ),
     );
@@ -185,8 +224,6 @@ class _EditorState extends State<Editor> {
   final TextEditingController endTimeController = TextEditingController();
   final TextEditingController activityController = TextEditingController();
   late DataService _dataservice;
-
-  addItem() {}
 
   @override
   void initState() {
@@ -471,7 +508,11 @@ class PDFPreview extends StatelessWidget {
       appBar: AppBar(
           title: const Text('Protokollvorschau'),
           backgroundColor: Colors.amber,
-          leading: IconButton(onPressed: () {}, icon: const Icon(Icons.close)),
+          leading: IconButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              icon: const Icon(Icons.close)),
           actions: [
             IconButton(onPressed: () {}, icon: const Icon(Icons.file_download)),
           ]),
@@ -484,53 +525,101 @@ class PDFPreview extends StatelessWidget {
 
   Future<Uint8List> createPreview(List<DayData> data) async {
     final pdf = pdf_widgets.Document();
-    pdf.addPage(pdf_widgets.Page(build: (context) {
-      return pdf_widgets.Column(
+    List<pdf_widgets.Widget> children = [];
+
+    data.asMap().forEach((key, value) {
+      final index = key + 1;
+      if (index % 4 == 0 || index == data.length) {
+        children.addAll(getDayColumn(value, children.isEmpty));
+        final childrenCopy = children;
+        children = [];
+        pdf_widgets.Page page = pdf_widgets.Page(
+          build: (context) {
+            return pdf_widgets.Column(children: [
+              ...getHeader(),
+              ...childrenCopy,
+            ]);
+          },
+        );
+        pdf.addPage(page);
+      } else {
+        children.addAll(getDayColumn(value, children.isEmpty));
+      }
+    });
+    return pdf.save();
+  }
+
+  List<pdf_widgets.Widget> getHeader() {
+    return [
+      pdf_widgets.Row(
         children: [
-          pdf_widgets.Row(
-            children: [
-              pdf_widgets.Expanded(
-                child: pdf_widgets.Text('Tätigkeit im Praktikum',
-                    textAlign: pdf_widgets.TextAlign.center),
-              ),
-            ],
+          pdf_widgets.Expanded(
+            child: pdf_widgets.Text('Tätigkeit im Praktikum',
+                textAlign: pdf_widgets.TextAlign.center),
           ),
-          pdf_widgets.SizedBox(height: 20.0),
-          pdf_widgets.Row(
-            children: [
-              pdf_widgets.Text('Beschreibe einen Tag der Woche ausführlich.')
-            ],
-          ),
-          pdf_widgets.SizedBox(height: 20.0),
-          pdf_widgets.Table(
-              border: pdf_widgets.TableBorder.all(color: PdfColors.black),
+        ],
+      ),
+      pdf_widgets.SizedBox(height: 20.0),
+      pdf_widgets.Row(
+        children: [
+          pdf_widgets.Text('Beschreibe einen Tag der Woche ausführlich.')
+        ],
+      ),
+      pdf_widgets.SizedBox(height: 20.0),
+    ];
+  }
+
+  List<pdf_widgets.Widget> getDayColumn(DayData day, bool addTableHearer) {
+    return [
+      pdf_widgets.Table(
+        border: pdf_widgets.TableBorder.all(color: PdfColors.black),
+        columnWidths: {1: const pdf_widgets.FixedColumnWidth(100)},
+        children: [
+          if (addTableHearer)
+            pdf_widgets.TableRow(
               children: [
-                pdf_widgets.TableRow(children: [
-                  pdf_widgets.SizedBox(
+                pdf_widgets.SizedBox(
                     width: 35.0,
                     child: pdf_widgets.Column(
-                        children: [pdf_widgets.Text('Datum/\nArbeitszeit')]),
-                  ),
-                  pdf_widgets.Column(
-                      mainAxisAlignment: pdf_widgets.MainAxisAlignment.center,
-                      children: [pdf_widgets.Text('Ausgeführte Arbeiten')]),
-                ]),
-                pdf_widgets.TableRow(children: [
-                  pdf_widgets.SizedBox(
-                    width: 35.0,
-                    child: pdf_widgets.Column(children: [
-                      pdf_widgets.Text('\n\n\nvon\n\n\n\nbis\n\n\n\n',
-                          textAlign: pdf_widgets.TextAlign.left)
+                      children: [
+                        pdf_widgets.Padding(
+                          padding: const pdf_widgets.EdgeInsets.all(10.0),
+                          child: pdf_widgets.Text('Datum/Arbeitszeit'),
+                        )
+                      ],
+                    )),
+                pdf_widgets.Column(
+                    mainAxisAlignment: pdf_widgets.MainAxisAlignment.center,
+                    children: [
+                      pdf_widgets.Padding(
+                        padding: const pdf_widgets.EdgeInsets.all(10.0),
+                        child: pdf_widgets.Text('Ausgeführte Arbeiten'),
+                      )
                     ]),
-                  ),
-                  pdf_widgets.Column(
-                      mainAxisAlignment: pdf_widgets.MainAxisAlignment.center,
-                      children: [pdf_widgets.Text('')]),
+              ],
+            ),
+          pdf_widgets.TableRow(
+            children: [
+              pdf_widgets.SizedBox(
+                width: 35.0,
+                child: pdf_widgets.Column(children: [
+                  pdf_widgets.Text(
+                      '\n${day.date}\n\nvon: ${day.startTime}\nbis: ${day.endTime}\n\n',
+                      textAlign: pdf_widgets.TextAlign.left)
                 ]),
-              ])
+              ),
+              pdf_widgets.Column(
+                  mainAxisAlignment: pdf_widgets.MainAxisAlignment.start,
+                  crossAxisAlignment: pdf_widgets.CrossAxisAlignment.start,
+                  children: [
+                    pdf_widgets.Padding(
+                        padding: const pdf_widgets.EdgeInsets.all(10.0),
+                        child: pdf_widgets.Text(day.tasks))
+                  ]),
+            ],
+          ),
         ],
-      );
-    }));
-    return pdf.save();
+      )
+    ];
   }
 }
