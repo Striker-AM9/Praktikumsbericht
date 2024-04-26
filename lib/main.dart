@@ -366,7 +366,7 @@ class _EditorState extends State<Editor> {
                 },
               ),
               Padding(
-                padding: const EdgeInsets.all(150),
+                padding: const EdgeInsets.only(top: 120, left: 290),
                 child: MaterialButton(
                   onPressed: () {
                     Navigator.of(context)
@@ -378,15 +378,15 @@ class _EditorState extends State<Editor> {
                       }
                     });
                   },
-                  color: Colors.green,
+                  color: Colors.amber,
                   shape: const CircleBorder(),
                   padding: const EdgeInsets.all(15.0),
                   child: const Icon(
-                    Icons.adb,
+                    Icons.smart_toy_outlined,
                     size: 35,
                   ),
                 ),
-              )
+              ),
             ],
           ),
         ),
@@ -506,16 +506,14 @@ class PDFPreview extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-          title: const Text('Protokollvorschau'),
-          backgroundColor: Colors.amber,
-          leading: IconButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              icon: const Icon(Icons.close)),
-          actions: [
-            IconButton(onPressed: () {}, icon: const Icon(Icons.file_download)),
-          ]),
+        title: const Text('Protokollvorschau'),
+        backgroundColor: Colors.amber,
+        leading: IconButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            icon: const Icon(Icons.close)),
+      ),
       body: PdfPreview(build: (context) async {
         List<DayData> data = await dataService.getData();
         return await createPreview(data);
